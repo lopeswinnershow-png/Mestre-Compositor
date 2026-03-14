@@ -53,15 +53,11 @@ Retorne um objeto JSON. **IMPORTANTE: Os campos "persona", "vocal" e "instrument
 }`;
 
 export async function generateComposition(input: string) {
-  // Tenta pegar de várias formas para garantir compatibilidade com Vercel/Vite
-  // Adicionado 'mestrecomp' como solicitado pelo usuário
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 
-                 process.env.GEMINI_API_KEY || 
-                 (import.meta.env as any).VITE_mestrecomp ||
-                 (process.env as any).mestrecomp;
+  // Usa a chave vinda da variável 'mestrecomp' configurada na Vercel
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   
   if (!apiKey || apiKey === 'undefined' || apiKey === '') {
-    throw new Error('Chave API não encontrada. Verifique se o nome da variável na Vercel está correto (ex: mestrecomp ou VITE_GEMINI_API_KEY) e faça um novo Redeploy.');
+    throw new Error('Chave "mestrecomp" não encontrada. Verifique se o nome está correto na Vercel e faça um novo Redeploy.');
   }
 
   const ai = new GoogleGenAI({ apiKey });
