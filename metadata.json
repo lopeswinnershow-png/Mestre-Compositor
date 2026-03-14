@@ -1,1 +1,5 @@
-
+{
+  "name": "Mestre Compositor",
+  "description": "Agente de IA profissional para criação de letras e prompts musicais de elite.",
+  "requestFramePermissions": []
+}
