@@ -64,7 +64,7 @@ export async function generateComposition(input: string) {
   
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-3-flash-preview",
       contents: [{ parts: [{ text: input }] }],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
