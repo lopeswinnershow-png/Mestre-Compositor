@@ -1,5 +1,3 @@
-{
-  "name": "Mestre Compositor",
-  "description": "Agente de IA profissional para criação de letras e prompts musicais de elite.",
-  "requestFramePermissions": []
-}
+git add .
+git commit -m "Fix: estrutura completa e dependências limpas"
+git push origin main
