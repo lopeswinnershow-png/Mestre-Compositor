@@ -39,9 +39,9 @@ export default function App() {
     try {
       const result = await generateComposition(input);
       setComposition(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Ocorreu um erro ao gerar a composição. Tente novamente.');
+      setError(err.message || 'Ocorreu um erro ao gerar a composição. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -139,6 +139,17 @@ export default function App() {
                   </button>
                 </div>
               </div>
+
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-xs font-medium flex items-center gap-3"
+                >
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  {error}
+                </motion.div>
+              )}
             </section>
 
             <div className="pt-8">

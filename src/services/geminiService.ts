@@ -53,37 +53,56 @@ Retorne um objeto JSON. **IMPORTANTE: Os campos "persona", "vocal" e "instrument
 }`;
 
 export async function generateComposition(input: string) {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const apiKey = process.env.GEMINI_API_KEY;
   
-  const response = await ai.models.generateContent({
-    model: "gemini-3.1-pro-preview",
-    contents: [{ parts: [{ text: input }] }],
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          musicName: { type: Type.STRING },
-          lyrics: { type: Type.STRING },
-          stylePrompt: { type: Type.STRING },
-          excludeStyles: { type: Type.STRING },
-          weirdness: { type: Type.INTEGER },
-          styleInfluence: { type: Type.INTEGER },
-          persona: { type: Type.STRING },
-          productionSummary: {
-            type: Type.OBJECT,
-            properties: {
-              vocal: { type: Type.STRING },
-              instrumental: { type: Type.STRING }
-            },
-            required: ["vocal", "instrumental"]
-          }
-        },
-        required: ["musicName", "lyrics", "stylePrompt", "excludeStyles", "weirdness", "styleInfluence", "persona", "productionSummary"],
-      },
-    },
-  });
+  if (!apiKey || apiKey === 'undefined') {
+    throw new Error('API Key não configurada. Verifique as variáveis de ambiente no painel da Vercel e faça um novo deploy.');
+  }
 
-  return JSON.parse(response.text || "{}");
+  const ai = new GoogleGenAI({ apiKey });
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-pro-preview",
+      contents: [{ parts: [{ text: input }] }],
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            musicName: { type: Type.STRING },
+            lyrics: { type: Type.STRING },
+            stylePrompt: { type: Type.STRING },
+            excludeStyles: { type: Type.STRING },
+            weirdness: { type: Type.INTEGER },
+            styleInfluence: { type: Type.INTEGER },
+            persona: { type: Type.STRING },
+            productionSummary: {
+              type: Type.OBJECT,
+              properties: {
+                vocal: { type: Type.STRING },
+                instrumental: { type: Type.STRING }
+              },
+              required: ["vocal", "instrumental"]
+            }
+          },
+          required: ["musicName", "lyrics", "stylePrompt", "excludeStyles", "weirdness", "styleInfluence", "persona", "productionSummary"],
+        },
+      },
+    });
+
+    const text = response.text;
+    if (!text) throw new Error('O modelo não retornou nenhum conteúdo.');
+
+    // Limpa possíveis blocos de código markdown se o modelo ignorar o mimeType
+    const cleanJson = text.replace(/```json\n?|```/g, '').trim();
+    return JSON.parse(cleanJson);
+  } catch (error: any) {
+    console.error('Gemini Service Error:', error);
+    if (error.message?.includes('API_KEY_INVALID')) {
+      throw new Error('A chave da API fornecida é inválida. Verifique se copiou corretamente.');
+    }
+    throw error;
+  }
 }
