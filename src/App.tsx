@@ -80,11 +80,15 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-16">
-        <div className="mb-16 text-center">
-          <h2 className="text-sm md:text-base font-display font-bold uppercase tracking-[0.3em] text-emerald-500/90 drop-shadow-sm">
-            Gerador de Letras Únicas, Autorais e de Sucesso
+        <div className="mb-16 text-center space-y-6 flex flex-col items-center">
+          <h2 className="text-lg md:text-2xl font-display font-medium tracking-wide text-zinc-300 drop-shadow-sm">
+            A mente dos melhores compositores do mundo, <br className="hidden md:block" />
+            alimentada por <span className="font-bold bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">Espiritual Quântico</span>.
           </h2>
-          <div className="mt-4 h-px w-24 mx-auto bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+          <h3 className="text-xs md:text-sm font-display font-bold uppercase tracking-[0.3em] text-emerald-500/70 drop-shadow-sm">
+            Gerador de Letras Únicas, Autorais e de Sucesso
+          </h3>
+          <div className="mt-2 h-px w-24 mx-auto bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
