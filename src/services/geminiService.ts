@@ -101,9 +101,21 @@ export async function generateComposition(input: string) {
     return JSON.parse(cleanJson);
   } catch (error: any) {
     console.error('Gemini Service Error:', error);
-    if (error.message?.includes('API_KEY_INVALID')) {
+    
+    const errorMessage = error.message || '';
+    
+    if (errorMessage.includes('API_KEY_INVALID')) {
       throw new Error('A chave da API fornecida é inválida. Verifique se copiou corretamente.');
     }
-    throw error;
+    
+    if (errorMessage.includes('503') || errorMessage.includes('high demand') || errorMessage.includes('UNAVAILABLE')) {
+      throw new Error('O servidor da inteligência artificial está com muita demanda no momento. Por favor, aguarde alguns segundos e clique em gerar novamente.');
+    }
+    
+    if (errorMessage.includes('429') || errorMessage.includes('Quota exceeded') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+      throw new Error('O limite de uso gratuito da API foi atingido. Por favor, tente novamente mais tarde ou verifique os limites da sua conta no Google AI Studio.');
+    }
+    
+    throw new Error('Ocorreu um erro de conexão com a inteligência artificial. Tente novamente.');
   }
 }
