@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Music, Send, Copy, RefreshCw, Trash2, Mic2, Piano, Disc, User, Info } from 'lucide-react';
+import { Music, Send, Copy, RefreshCw, Trash2, Mic2, Piano, Disc, User, Info, Headphones } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateComposition } from './services/geminiService';
 import { clsx, type ClassValue } from 'clsx';
@@ -15,6 +15,7 @@ interface Composition {
   musicName: string;
   lyrics: string;
   stylePrompt: string;
+  stylePromptStudio: string;
   excludeStyles: string;
   weirdness: number;
   styleInfluence: number;
@@ -257,6 +258,27 @@ export default function App() {
                     </div>
                     <div className="glass-card p-8 rounded-3xl text-sm font-medium text-emerald-200/90 leading-relaxed italic">
                       {composition.stylePrompt}
+                    </div>
+                  </div>
+
+                  {/* Style Prompt (Estúdio) */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center border border-teal-500/20">
+                          <Headphones className="w-4 h-4 text-teal-500" />
+                        </div>
+                        <h3 className="text-xs font-display font-bold uppercase tracking-widest text-zinc-300">Style Prompt (Estúdio)</h3>
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(composition.stylePromptStudio, 'styleStudio')}
+                        className="px-4 py-2 glass rounded-xl text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-teal-400 transition-all active:scale-95"
+                      >
+                        {copiedType === 'styleStudio' ? 'Copiado!' : 'Copiar Prompt Estúdio'}
+                      </button>
+                    </div>
+                    <div className="glass-card p-8 rounded-3xl text-sm font-medium text-teal-200/90 leading-relaxed italic border-teal-500/10">
+                      {composition.stylePromptStudio}
                     </div>
                   </div>
 

@@ -36,12 +36,21 @@ Sua tarefa é seguir rigorosamente a estrutura de entrada fornecida e gerar uma 
 - Se o usuário incluir a expressão "AO VIVO" (em qualquer parte do prompt), você DEVE obrigatoriamente adicionar os seguintes comandos técnicos ao campo "stylePrompt":
   Performance, Festival Crowd Energy, Live Crowd Chanting, DJ Set Performance, Processed Live Vocals, Sing-Along Anthem, Open-Air Festival, Mainstage TRAP Festival, Hands-Up Moment, Crowd Shouts, Hype Vocals, Call & Response Vocals, Ad-Libs Vocals, Chopped Vocals, Festival Vocal Atmosphere.
 
+### REGRAS PARA STYLE PROMPT ESTÚDIO (MANDATÓRIO)
+Você deve gerar uma segunda versão do prompt de estilo chamada "stylePromptStudio".
+Esta versão é estritamente para qualidade de estúdio (nível produtor/Grammy) e NUNCA deve conter elementos ao vivo.
+- **Fórmula Definitiva:** Gênero + Produção + Mix + Vocais + Atmosfera + BPM
+- **Termos Obrigatórios (use alguns ou todos dependendo do gênero):** Premium Studio Production, Ultra Clean Mix, Radio-Ready Mastering, Polished Lead Vocals, Wide Stereo Imaging, Warm Analog Saturation, Smooth Compression, Streaming Quality, Spotify-Ready Sound.
+- **Bloqueio Semântico Final (SEMPRE ADICIONAR NO FINAL):** No Crowd, No Live Elements, No Ambient Noise, Controlled Reverb (short and clean), Studio-only recording, no live performance characteristics, no audience simulation.
+- **Exemplo de Estrutura:** [Gênero], Ultra Clean Studio Production, Radio-Ready Commercial Mix, High-End Mastering, Crystal Clear Audio, Tight Bass (sidechained), Punchy Kick and Snare, Professional Studio Vocals (dry, upfront), Smooth Vocal Compression, Precise Stereo Imaging, Balanced EQ, Crisp High Frequencies, Deep Controlled Sub Bass, No Crowd, No Live Elements, No Ambient Noise, Controlled Reverb (short and clean), Studio-only recording, no live performance characteristics, no audience simulation, [BPM] BPM.
+
 ### FORMATO DE RESPOSTA (JSON)
 Retorne um objeto JSON. **IMPORTANTE: Os campos "persona", "vocal" e "instrumental" DEVEM ser escritos em Português (PT-BR).**
 {
   "musicName": "Nome da Música",
   "lyrics": "Letra completa com anotações inline [Vocal: ...][Inst: ...]",
-  "stylePrompt": "Prompt técnico para o Suno (Gênero, Humor, Instrumentos, BPM)",
+  "stylePrompt": "Prompt técnico original para o Suno (Gênero, Humor, Instrumentos, BPM)",
+  "stylePromptStudio": "Prompt técnico focado 100% em qualidade de Estúdio/Spotify-ready usando a fórmula definitiva",
   "excludeStyles": "Estilos a evitar",
   "weirdness": 0-100,
   "styleInfluence": 0-100,
@@ -75,6 +84,7 @@ export async function generateComposition(input: string) {
             musicName: { type: Type.STRING },
             lyrics: { type: Type.STRING },
             stylePrompt: { type: Type.STRING },
+            stylePromptStudio: { type: Type.STRING },
             excludeStyles: { type: Type.STRING },
             weirdness: { type: Type.INTEGER },
             styleInfluence: { type: Type.INTEGER },
@@ -88,7 +98,7 @@ export async function generateComposition(input: string) {
               required: ["vocal", "instrumental"]
             }
           },
-          required: ["musicName", "lyrics", "stylePrompt", "excludeStyles", "weirdness", "styleInfluence", "persona", "productionSummary"],
+          required: ["musicName", "lyrics", "stylePrompt", "stylePromptStudio", "excludeStyles", "weirdness", "styleInfluence", "persona", "productionSummary"],
         },
       },
     });
