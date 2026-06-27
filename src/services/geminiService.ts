@@ -63,7 +63,7 @@ Retorne um objeto JSON. **IMPORTANTE: Os campos "persona", "vocal" e "instrument
 
 export async function generateComposition(input: string) {
   // Usa a chave vinda da variável 'mestrecomp' configurada na Vercel
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
   
   if (!apiKey || apiKey === 'undefined' || apiKey === '') {
     throw new Error('Chave "mestrecomp" não encontrada. Verifique se o nome está correto na Vercel e faça um novo Redeploy.');
@@ -73,7 +73,7 @@ export async function generateComposition(input: string) {
   
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       contents: [{ parts: [{ text: input }] }],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -108,7 +108,13 @@ export async function generateComposition(input: string) {
 
     // Limpa possíveis blocos de código markdown se o modelo ignorar o mimeType
     const cleanJson = text.replace(/```json\n?|```/g, '').trim();
-    return JSON.parse(cleanJson);
+    
+    try {
+      return JSON.parse(cleanJson);
+    } catch (parseError: any) {
+      console.error('JSON Parse Error:', parseError, 'Raw response:', text);
+      throw new Error(`Erro ao interpretar a resposta da IA. O modelo gerou um formato inválido. Tente novamente. Detalhes: ${parseError.message}`);
+    }
   } catch (error: any) {
     console.error('Gemini Service Error:', error);
     
@@ -126,6 +132,6 @@ export async function generateComposition(input: string) {
       throw new Error('O limite de uso gratuito da API foi atingido. Por favor, tente novamente mais tarde ou verifique os limites da sua conta no Google AI Studio.');
     }
     
-    throw new Error('Ocorreu um erro de conexão com a inteligência artificial. Tente novamente.');
+    throw new Error(`Ocorreu um erro de conexão com a inteligência artificial. Tente novamente. Detalhes: ${errorMessage}`);
   }
 }
