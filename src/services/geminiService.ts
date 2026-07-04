@@ -61,7 +61,7 @@ Retorne um objeto JSON. **IMPORTANTE: Os campos "persona", "vocal" e "instrument
   }
 }`;
 
-export async function generateComposition(input: string) {
+export async function generateComposition(input: string, referenceLink?: string) {
   // Usa a chave vinda da variável 'mestrecomp' configurada na Vercel
   const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
   
@@ -71,10 +71,15 @@ export async function generateComposition(input: string) {
 
   const ai = new GoogleGenAI({ apiKey });
   
+  let finalInput = input;
+  if (referenceLink && referenceLink.trim() !== '') {
+    finalInput += `\n\n=== INSTRUÇÃO ESPECIAL DE REFERÊNCIA ===\nLink de Referência: ${referenceLink}\n\nA partir do LINK da música de referência fornecido, realize uma análise técnica exaustiva para extrair os seguintes parâmetros: Andamento (BPM), Tonalidade, Modo Musical (incluindo modos gregos se identificáveis), Estilo/Gênero, Estrutura Melódica e Composição.\n\nNa análise da letra, identifique a estrutura de rimas utilizada (perfeitas, parelhas, alternadas ou concatenadas). Caso algum dado técnico não possa ser inferido com total segurança, declare explicitamente a limitação.\n\nREGRAS DE PROTEÇÃO AUTORAL: É terminantemente proibido reproduzir trechos da letra original, melodias específicas, hooks, frases marcantes ou qualquer elemento que configure plágio ou derivação direta. A análise deve ser puramente técnica e abstrata.\n\nRESULTADO ESPERADO: Após o diagnóstico, gere um comando para a criação de uma nova música original. Esta nova obra deve ser inspirada apenas na atmosfera, energia e estrutura técnica da referência, garantindo uma composição inédita, segura e com identidade própria, sem qualquer imitação da obra original.`;
+  }
+  
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: [{ parts: [{ text: input }] }],
+      contents: [{ parts: [{ text: finalInput }] }],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Music, Send, Copy, RefreshCw, Trash2, Mic2, Piano, Disc, User, Info, Headphones } from 'lucide-react';
+import { Music, Send, Copy, RefreshCw, Trash2, Mic2, Piano, Disc, User, Info, Headphones, Link2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateComposition } from './services/geminiService';
 import { clsx, type ClassValue } from 'clsx';
@@ -28,6 +28,7 @@ interface Composition {
 
 export default function App() {
   const [input, setInput] = useState(DEFAULT_PROMPT);
+  const [referenceLink, setReferenceLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [composition, setComposition] = useState<Composition | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +39,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const result = await generateComposition(input);
+      const result = await generateComposition(input, referenceLink);
       setComposition(result);
     } catch (err: any) {
       console.error(err);
@@ -104,28 +105,46 @@ export default function App() {
                 <h2 className="text-sm font-display font-bold uppercase tracking-widest text-zinc-300">Entrada Criativa</h2>
               </div>
               
-              <div className="relative">
+              <div className="relative space-y-4">
                 <div className="glass-card rounded-3xl overflow-hidden">
                   <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Descreva sua ideia musical aqui (ex: Uma letra de Rock em Português sobre liberdade)..."
-                    className="w-full h-[600px] bg-transparent p-8 text-sm font-mono leading-relaxed focus:outline-none transition-all resize-none placeholder:text-zinc-700 caret-emerald-500 custom-scrollbar"
+                    className="w-full h-[500px] bg-transparent p-8 text-sm font-mono leading-relaxed focus:outline-none transition-all resize-none placeholder:text-zinc-700 caret-emerald-500 custom-scrollbar"
                     style={{ color: 'rgba(255, 255, 255, 0.7)' }}
                   />
                 </div>
                 
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 p-2 glass rounded-2xl shadow-2xl">
+                {/* Reference Link Input */}
+                <div className="glass-card rounded-2xl overflow-hidden flex items-center px-4 py-3 border border-emerald-500/10 focus-within:border-emerald-500/30 transition-colors">
+                  <Link2 className="w-5 h-5 text-emerald-500/50 mr-3 flex-shrink-0" />
+                  <input
+                    type="url"
+                    value={referenceLink}
+                    onChange={(e) => setReferenceLink(e.target.value)}
+                    placeholder="Link de Referência Especial (YouTube, TikTok, Instagram) - Opcional"
+                    className="w-full bg-transparent text-sm font-medium focus:outline-none placeholder:text-zinc-600 text-zinc-300"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-center gap-3 p-2 mt-4">
                   <button
-                    onClick={() => setInput(DEFAULT_PROMPT)}
-                    className="p-3 text-zinc-500 hover:text-emerald-400 transition-all hover:scale-110 active:scale-95"
+                    onClick={() => {
+                      setInput(DEFAULT_PROMPT);
+                      setReferenceLink('');
+                    }}
+                    className="p-3 text-zinc-500 hover:text-emerald-400 transition-all hover:scale-110 active:scale-95 glass rounded-2xl shadow-xl"
                     title="Resetar Template"
                   >
                     <RefreshCw className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => setInput('')}
-                    className="p-3 text-zinc-500 hover:text-red-400 transition-all hover:scale-110 active:scale-95"
+                    onClick={() => {
+                      setInput('');
+                      setReferenceLink('');
+                    }}
+                    className="p-3 text-zinc-500 hover:text-red-400 transition-all hover:scale-110 active:scale-95 glass rounded-2xl shadow-xl"
                     title="Limpar"
                   >
                     <Trash2 className="w-5 h-5" />
