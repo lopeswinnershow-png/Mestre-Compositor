@@ -44,6 +44,10 @@ Esta versão é estritamente para qualidade de estúdio (nível produtor/Grammy)
 - **Bloqueio Semântico Final (SEMPRE ADICIONAR NO FINAL):** No Crowd, No Live Elements, No Ambient Noise, Controlled Reverb (short and clean), Studio-only recording, no live performance characteristics, no audience simulation.
 - **Exemplo de Estrutura:** [Gênero], Ultra Clean Studio Production, Radio-Ready Commercial Mix, High-End Mastering, Crystal Clear Audio, Tight Bass (sidechained), Punchy Kick and Snare, Professional Studio Vocals (dry, upfront), Smooth Vocal Compression, Precise Stereo Imaging, Balanced EQ, Crisp High Frequencies, Deep Controlled Sub Bass, No Crowd, No Live Elements, No Ambient Noise, Controlled Reverb (short and clean), Studio-only recording, no live performance characteristics, no audience simulation, [BPM] BPM.
 
+### COMANDOS VOCAIS DINÂMICOS (MANDATÓRIO)
+Avalie a letra e o estilo da música gerada. Escolha de 1 a 2 comandos da lista abaixo que melhor condizem com a música e adicione-os TANTO no "stylePrompt" original QUANTO no "stylePromptStudio":
+[soft vocals], [no belting], [intimate tone], [minimal vibrato], [natural voice], [conversational style]
+
 ### FORMATO DE RESPOSTA (JSON)
 Retorne um objeto JSON. **IMPORTANTE: Os campos "persona", "vocal" e "instrumental" DEVEM ser escritos em Português (PT-BR).**
 {
