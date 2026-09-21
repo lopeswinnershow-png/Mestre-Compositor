@@ -81,69 +81,87 @@ export async function generateComposition(input: string, referenceLink?: string)
   }
   
   const CANDIDATE_MODELS = [
-    "gemini-flash-latest",
+    "gemini-2.5-flash",
     "gemini-3.8-flash",
-    "gemini-2.5-flash"
+    "gemini-2.0-flash",
+    "gemini-flash-latest"
   ];
 
   let lastError: any = null;
 
   for (const modelName of CANDIDATE_MODELS) {
-    try {
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents: [{ parts: [{ text: finalInput }] }],
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              musicName: { type: Type.STRING },
-              lyrics: { type: Type.STRING },
-              stylePrompt: { type: Type.STRING },
-              stylePromptStudio: { type: Type.STRING },
-              excludeStyles: { type: Type.STRING },
-              weirdness: { type: Type.INTEGER },
-              styleInfluence: { type: Type.INTEGER },
-              persona: { type: Type.STRING },
-              productionSummary: {
-                type: Type.OBJECT,
-                properties: {
-                  vocal: { type: Type.STRING },
-                  instrumental: { type: Type.STRING }
-                },
-                required: ["vocal", "instrumental"]
-              }
-            },
-            required: ["musicName", "lyrics", "stylePrompt", "stylePromptStudio", "excludeStyles", "weirdness", "styleInfluence", "persona", "productionSummary"],
-          },
-        },
-      });
-
-      const text = response.text;
-      if (!text) throw new Error('O modelo não retornou nenhum conteúdo.');
-
-      // Limpa possíveis blocos de código markdown se o modelo ignorar o mimeType
-      const cleanJson = text.replace(/```json\n?|```/g, '').trim();
-      
+    // Tenta até 2 vezes por modelo em caso de 503 / alta demanda temporária
+    for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        return JSON.parse(cleanJson);
-      } catch (parseError: any) {
-        console.error('JSON Parse Error:', parseError, 'Raw response:', text);
-        throw new Error(`Erro ao interpretar a resposta da IA. O modelo gerou um formato inválido. Tente novamente. Detalhes: ${parseError.message}`);
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: [{ parts: [{ text: finalInput }] }],
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTION,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                musicName: { type: Type.STRING },
+                lyrics: { type: Type.STRING },
+                stylePrompt: { type: Type.STRING },
+                stylePromptStudio: { type: Type.STRING },
+                excludeStyles: { type: Type.STRING },
+                weirdness: { type: Type.INTEGER },
+                styleInfluence: { type: Type.INTEGER },
+                persona: { type: Type.STRING },
+                productionSummary: {
+                  type: Type.OBJECT,
+                  properties: {
+                    vocal: { type: Type.STRING },
+                    instrumental: { type: Type.STRING }
+                  },
+                  required: ["vocal", "instrumental"]
+                }
+              },
+              required: ["musicName", "lyrics", "stylePrompt", "stylePromptStudio", "excludeStyles", "weirdness", "styleInfluence", "persona", "productionSummary"],
+            },
+          },
+        });
+
+        const text = response.text;
+        if (!text) throw new Error('O modelo não retornou nenhum conteúdo.');
+
+        // Limpa possíveis blocos de código markdown se o modelo ignorar o mimeType
+        const cleanJson = text.replace(/```json\n?|```/g, '').trim();
+        
+        try {
+          return JSON.parse(cleanJson);
+        } catch (parseError: any) {
+          console.error('JSON Parse Error:', parseError, 'Raw response:', text);
+          throw new Error(`Erro ao interpretar a resposta da IA. O modelo gerou um formato inválido. Tente novamente. Detalhes: ${parseError.message}`);
+        }
+      } catch (error: any) {
+        lastError = error;
+        const errorMsg = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
+        
+        // Se for erro definitivo de chave suspensa ou inválida, não adianta tentar outros
+        if (errorMsg.includes('CONSUMER_SUSPENDED') || errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('has been suspended')) {
+          break;
+        }
+
+        // Se for erro de alta demanda temporária (503 / UNAVAILABLE), aguarda 1.5s e tenta novamente
+        const isTemporaryBusy = errorMsg.includes('503') || errorMsg.includes('high demand') || errorMsg.includes('UNAVAILABLE') || errorMsg.includes('overloaded');
+        if (isTemporaryBusy && attempt === 1) {
+          console.warn(`Modelo ${modelName} ocupado (tentativa 1). Aguardando 1.5s...`);
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          continue;
+        }
+
+        // Se for 404 (modelo não suportado) ou falhou após retry de 503, avança para o próximo modelo
+        console.warn(`Modelo ${modelName} falhou (${errorMsg.slice(0, 80)}). Tentando próximo modelo...`);
+        break;
       }
-    } catch (error: any) {
-      lastError = error;
-      const errorMsg = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
-      
-      // Se for 404 (modelo não encontrado), tenta o próximo modelo da lista
-      if (errorMsg.includes('404') || errorMsg.includes('NOT_FOUND') || errorMsg.includes('Requested entity was not found')) {
-        console.warn(`Modelo ${modelName} retornou 404. Tentando próximo modelo...`);
-        continue;
-      }
-      
-      // Se for outro erro (ex: autenticação, permissão, etc.), lança imediatamente
+    }
+
+    // Se o erro for de chave suspensa ou inválida, para o loop geral
+    const generalMsg = lastError?.message || '';
+    if (generalMsg.includes('CONSUMER_SUSPENDED') || generalMsg.includes('API_KEY_INVALID') || generalMsg.includes('has been suspended')) {
       break;
     }
   }
