@@ -80,67 +80,97 @@ export async function generateComposition(input: string, referenceLink?: string)
     finalInput += `\n\n=== INSTRUÇÃO ESPECIAL DE REFERÊNCIA ===\nLink de Referência: ${referenceLink}\n\nA partir do LINK da música de referência fornecido, realize uma análise técnica exaustiva para extrair os seguintes parâmetros: Andamento (BPM), Tonalidade, Modo Musical (incluindo modos gregos se identificáveis), Estilo/Gênero, Estrutura Melódica e Composição.\n\nNa análise da letra, identifique a estrutura de rimas utilizada (perfeitas, parelhas, alternadas ou concatenadas). Caso algum dado técnico não possa ser inferido com total segurança, declare explicitamente a limitação.\n\nREGRAS DE PROTEÇÃO AUTORAL: É terminantemente proibido reproduzir trechos da letra original, melodias específicas, hooks, frases marcantes ou qualquer elemento que configure plágio ou derivação direta. A análise deve ser puramente técnica e abstrata.\n\nRESULTADO ESPERADO: Após o diagnóstico, gere um comando para a criação de uma nova música original. Esta nova obra deve ser inspirada apenas na atmosfera, energia e estrutura técnica da referência, garantindo uma composição inédita, segura e com identidade própria, sem qualquer imitação da obra original.`;
   }
   
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ parts: [{ text: finalInput }] }],
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            musicName: { type: Type.STRING },
-            lyrics: { type: Type.STRING },
-            stylePrompt: { type: Type.STRING },
-            stylePromptStudio: { type: Type.STRING },
-            excludeStyles: { type: Type.STRING },
-            weirdness: { type: Type.INTEGER },
-            styleInfluence: { type: Type.INTEGER },
-            persona: { type: Type.STRING },
-            productionSummary: {
-              type: Type.OBJECT,
-              properties: {
-                vocal: { type: Type.STRING },
-                instrumental: { type: Type.STRING }
-              },
-              required: ["vocal", "instrumental"]
-            }
-          },
-          required: ["musicName", "lyrics", "stylePrompt", "stylePromptStudio", "excludeStyles", "weirdness", "styleInfluence", "persona", "productionSummary"],
-        },
-      },
-    });
+  const CANDIDATE_MODELS = [
+    "gemini-flash-latest",
+    "gemini-3.8-flash",
+    "gemini-2.5-flash"
+  ];
 
-    const text = response.text;
-    if (!text) throw new Error('O modelo não retornou nenhum conteúdo.');
+  let lastError: any = null;
 
-    // Limpa possíveis blocos de código markdown se o modelo ignorar o mimeType
-    const cleanJson = text.replace(/```json\n?|```/g, '').trim();
-    
+  for (const modelName of CANDIDATE_MODELS) {
     try {
-      return JSON.parse(cleanJson);
-    } catch (parseError: any) {
-      console.error('JSON Parse Error:', parseError, 'Raw response:', text);
-      throw new Error(`Erro ao interpretar a resposta da IA. O modelo gerou um formato inválido. Tente novamente. Detalhes: ${parseError.message}`);
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents: [{ parts: [{ text: finalInput }] }],
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              musicName: { type: Type.STRING },
+              lyrics: { type: Type.STRING },
+              stylePrompt: { type: Type.STRING },
+              stylePromptStudio: { type: Type.STRING },
+              excludeStyles: { type: Type.STRING },
+              weirdness: { type: Type.INTEGER },
+              styleInfluence: { type: Type.INTEGER },
+              persona: { type: Type.STRING },
+              productionSummary: {
+                type: Type.OBJECT,
+                properties: {
+                  vocal: { type: Type.STRING },
+                  instrumental: { type: Type.STRING }
+                },
+                required: ["vocal", "instrumental"]
+              }
+            },
+            required: ["musicName", "lyrics", "stylePrompt", "stylePromptStudio", "excludeStyles", "weirdness", "styleInfluence", "persona", "productionSummary"],
+          },
+        },
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('O modelo não retornou nenhum conteúdo.');
+
+      // Limpa possíveis blocos de código markdown se o modelo ignorar o mimeType
+      const cleanJson = text.replace(/```json\n?|```/g, '').trim();
+      
+      try {
+        return JSON.parse(cleanJson);
+      } catch (parseError: any) {
+        console.error('JSON Parse Error:', parseError, 'Raw response:', text);
+        throw new Error(`Erro ao interpretar a resposta da IA. O modelo gerou um formato inválido. Tente novamente. Detalhes: ${parseError.message}`);
+      }
+    } catch (error: any) {
+      lastError = error;
+      const errorMsg = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
+      
+      // Se for 404 (modelo não encontrado), tenta o próximo modelo da lista
+      if (errorMsg.includes('404') || errorMsg.includes('NOT_FOUND') || errorMsg.includes('Requested entity was not found')) {
+        console.warn(`Modelo ${modelName} retornou 404. Tentando próximo modelo...`);
+        continue;
+      }
+      
+      // Se for outro erro (ex: autenticação, permissão, etc.), lança imediatamente
+      break;
     }
-  } catch (error: any) {
-    console.error('Gemini Service Error:', error);
-    
-    const errorMessage = error.message || '';
-    
-    if (errorMessage.includes('API_KEY_INVALID')) {
-      throw new Error('A chave da API fornecida é inválida. Verifique se copiou corretamente.');
-    }
-    
-    if (errorMessage.includes('503') || errorMessage.includes('high demand') || errorMessage.includes('UNAVAILABLE')) {
-      throw new Error('O servidor da inteligência artificial está com muita demanda no momento. Por favor, aguarde alguns segundos e clique em gerar novamente.');
-    }
-    
-    if (errorMessage.includes('429') || errorMessage.includes('Quota exceeded') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-      throw new Error('O limite de uso gratuito da API foi atingido. Por favor, tente novamente mais tarde ou verifique os limites da sua conta no Google AI Studio.');
-    }
-    
-    throw new Error(`Ocorreu um erro de conexão com a inteligência artificial. Tente novamente. Detalhes: ${errorMessage}`);
   }
+
+  // Se chegou aqui, nenhum modelo funcionou
+  console.error('Gemini Service Final Error:', lastError);
+  const errorMessage = lastError?.message || (typeof lastError === 'string' ? lastError : JSON.stringify(lastError));
+  
+  if (errorMessage.includes('CONSUMER_SUSPENDED') || errorMessage.includes('has been suspended') || errorMessage.includes('PERMISSION_DENIED')) {
+    throw new Error('A sua chave da API do Google foi suspensa ou desativada pelo Google (CONSUMER_SUSPENDED). Para resolver, gere uma nova chave de API no Google AI Studio (https://aistudio.google.com/app/apikey), atualize a variável na Vercel e faça um novo Redeploy.');
+  }
+
+  if (errorMessage.includes('API_KEY_INVALID') || errorMessage.includes('API key not valid')) {
+    throw new Error('A chave da API fornecida é inválida. Verifique se copiou a chave completa e corretamente.');
+  }
+  
+  if (errorMessage.includes('503') || errorMessage.includes('high demand') || errorMessage.includes('UNAVAILABLE')) {
+    throw new Error('O servidor da inteligência artificial está com muita demanda no momento. Por favor, aguarde alguns segundos e clique em gerar novamente.');
+  }
+  
+  if (errorMessage.includes('429') || errorMessage.includes('Quota exceeded') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+    throw new Error('O limite de uso da API foi atingido. Por favor, tente novamente mais tarde ou verifique os limites da sua conta no Google AI Studio.');
+  }
+
+  if (errorMessage.includes('404') || errorMessage.includes('NOT_FOUND') || errorMessage.includes('Requested entity was not found')) {
+    throw new Error('O modelo de IA não foi encontrado para esta versão da API. Por favor, tente novamente.');
+  }
+  
+  throw new Error(`Ocorreu um erro de conexão com a inteligência artificial. Tente novamente. Detalhes: ${errorMessage}`);
 }

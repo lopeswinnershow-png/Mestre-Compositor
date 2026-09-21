@@ -8,7 +8,14 @@ export default defineConfig(({mode}) => {
   return {
     plugins: [react(), tailwindcss()],
     define: {
-      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.mestrecomp || env.VITE_mestrecomp || process.env.mestrecomp),
+      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(
+        env.mestrecomp ||
+        env.VITE_mestrecomp ||
+        process.env.mestrecomp ||
+        env.VITE_GEMINI_API_KEY ||
+        env.GEMINI_API_KEY ||
+        process.env.GEMINI_API_KEY
+      ),
     },
     resolve: {
       alias: {
